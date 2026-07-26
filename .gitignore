@@ -1,0 +1,27 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+
+# Environment Variables
+.env
+.env.*
+*.pem
+*.key
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE Configurations $ System Files
+.vscode/
+.idea/
+.DS_Store
+
+# Cache
+.cache/
+.langchain_cache/
