@@ -25,3 +25,7 @@ __pycache__/
 # Cache
 .cache/
 .langchain_cache/
+
+# LangGraph local runtime state & API build artifacts
+.langgraph_api/
+.langgraph/
