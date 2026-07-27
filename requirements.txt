@@ -4,3 +4,7 @@ python-dotenv
 requests
 requests-cache
 pydantic
+langgraph
+langgraph-cli
+langgraph-api
+tavily
