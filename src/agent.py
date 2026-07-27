@@ -18,18 +18,13 @@ def web_search(query: str):
     """Search information from the web."""
     return tavily_client.search(query=query)
 
-system_prompt = """
-
-You are a knowledgeable individual, answer user questions at their requests.
-
-Using the web search tool, find the latest and correct information from the web to answer user.
-
-"""
+system_prompt = """You are a knowledgeable assistant.
+Always use the web search tool to find the latest and correct information from the web before answering user questions."""
 
 question = HumanMessage(content="Who is the current Prime Minister of Canada?")
 
 model = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-flash-lite",
     temperature=0.5
 )
 
@@ -40,10 +35,3 @@ root_agent = create_agent(
     tools=[web_search],
     system_prompt=system_prompt
 )
-
-response = root_agent.invoke({"messages": [question]})
-
-
-# Print the conversation
-for m in response["messages"]:
-    m.pretty_print()
