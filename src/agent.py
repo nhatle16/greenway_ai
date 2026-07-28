@@ -1,7 +1,9 @@
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
-from tools.search import web_search
+from .tools.search import web_search
+from .tools.location_tools import geocode
+from .tools.weather_tools import get_weather_current, get_weather_forecast, get_weather_hourly
 from pathlib import Path
 
 load_dotenv()
@@ -31,6 +33,12 @@ model = ChatGoogleGenerativeAI(
 # Define a root agent
 root_agent = create_agent(
     model=model,
-    tools=[web_search],
+    tools=[
+        web_search,
+        geocode,
+        get_weather_current,
+        get_weather_forecast,
+        get_weather_hourly
+    ],
     system_prompt=load_prompt("root")
 )
