@@ -3,6 +3,7 @@ import requests
 
 from dotenv import load_dotenv
 from typing import Dict, Any
+from langchain.tools import tool
 
 load_dotenv()
 
@@ -40,3 +41,9 @@ def _geocode_impl(location: str) -> Dict[str, Any]:
         return {"error": f"Geocoding failed for {location}: {data.get('status')}"}
     except Exception as e:
         return {"error": f"HTTP Error: {str(e)}"}
+    
+    
+@tool
+def geocode(location: str) -> Dict[str, Any]:
+    """Get exact latitude and longitude coordinates for an address, location or landmark."""
+    return _geocode_impl(location)
