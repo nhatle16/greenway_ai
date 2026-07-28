@@ -9,6 +9,38 @@ from .location_tools import _geocode_impl
 load_dotenv()
 
 
+# Weather interpretation codes from WMO (World Meteorological Organization)
+WMO_CODE_MAP = {
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Foggy",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    56: "Light freezing drizzle",
+    57: "Dense freezing drizzle",
+    61: "Slight rain",
+    63: "Moderate rain",
+    65: "Heavy rain",
+    66: "Light freezing rain",
+    67: "Heavy freezing rain",
+    71: "Slight snow fall",
+    73: "Moderate snow fall",
+    75: "Heavy snow fall",
+    77: "Snow grains",
+    80: "Slight rain showers",
+    81: "Moderate rain showers",
+    82: "Violent rain showers",
+    85: "Slight snow showers",
+    86: "Heavy snow showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with slight hail",
+    99: "Thunderstorm with heavy hail"
+}
+
 def _fetch_open_meteo_impl(
     lat: float,
     lng: float,
@@ -93,11 +125,10 @@ def _fetch_open_meteo_impl(
                     "temperature": f"{hourly['temperature_2m'][i]} {temp_symbol}",
                     "feels_like": f"{hourly['apparent_temperature'][i]} {temp_symbol}",
                     "humidity": f"{hourly['relative_humidity_2m'][i]} %",
-                    "condition": code,
+                    "condition": WMO_CODE_MAP.get(code, "Unknown"),
                     "dew_point": f"{hourly['dew_point_2m'][i]} {units_info.get('dew_point_2m', "°C")}",
                     "wind_speed": f"{hourly['wind_speed_10m'][i]} {units_info.get('wind_speed_10m', "km/h")}"
                 })
-                
                 
         # Parse DAILY forecast
         if include_daily and "daily" in data:
@@ -114,7 +145,7 @@ def _fetch_open_meteo_impl(
                     "max_temp": f"{daily['temperature_2m_max'][i]} {temp_symbol}",
                     "min_temp": f"{daily['temperature_2m_min'][i]} {temp_symbol}",
                     "apparent_temp": f"{daily['apparent_temperature_mean'][i]} {temp_symbol}",
-                    "condition": code,
+                    "condition": WMO_CODE_MAP.get(code, "Unknown"),
                     "rain_chance": f"{daily['precipitation_probability_max'][i]} %",
                     "rain_amount": f"{daily['rain_sum'][i]} mm"
                 })
@@ -129,7 +160,7 @@ def _fetch_open_meteo_impl(
             "temperature": f"{current.get('temperature_2m')} {units_info.get('temperature_2m', '')}".strip(),
             "feels_like": f"{current.get('apparent_temperature')} {units_info.get('apparent_temperature', '')}".strip(),
             "humidity": f"{current.get('relative_humidity_2m')}%",
-            "condition": code,
+            "condition": WMO_CODE_MAP.get(code, "Unknown"),
             "dew_point": f"{current.get('dew_point_2m')} {units_info.get('dew_point_2m', '')}".strip(),
             "wind_speed": f"{current.get('wind_speed_10m')} {units_info.get('wind_speed_10m', '')}".strip()
         }
