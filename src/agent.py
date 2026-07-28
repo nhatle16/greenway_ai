@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
-from .tools.search import web_search
-from .tools.location_tools import geocode
-from .tools.weather_tools import get_weather_current, get_weather_forecast, get_weather_hourly
+from src.tools.search import web_search
+from src.tools.location_tools import geocode
+from src.tools.weather_tools import get_weather_current, get_weather_forecast, get_weather_hourly
 from pathlib import Path
 
 load_dotenv()
