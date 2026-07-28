@@ -58,3 +58,23 @@ def _fetch_open_meteo_impl(lat: float, lng: float, units: str = 'metric'):
         
     except requests.RequestException as e:
         return {"error": f"Open-Meteo HTTP request failed: {str(e)}"}
+
+
+@tool
+def get_weather_current(location: str, units: str = 'metric'):
+    """Get the current weather for any city or region name.
+
+    Args:
+        location (str): The name of the location or city (e.g., 'Saskatoon', 'Vancouver, BC')
+        units (str, optional): Unit system to use, either 'metric' (°C, km/h) or 'imperial' (°F, mph). Defaults to 'metric'.
+    """
+    coords = _geocode_impl(location)
+    if "error" in coords:
+        return coords
+    
+    weather = _fetch_open_meteo_impl(coords["lat"], coords["lng"], units)
+    if "error" in weather:
+        return weather
+    
+    weather["location"] = location
+    return weather
