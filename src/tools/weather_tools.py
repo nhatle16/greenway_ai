@@ -130,6 +130,8 @@ def _fetch_open_meteo_impl(
                     "wind_speed": f"{hourly['wind_speed_10m'][i]} {units_info.get('wind_speed_10m', "km/h")}"
                 })
                 
+            return {"forecast": hourly_list}
+        
         # Parse DAILY forecast
         if include_daily and "daily" in data:
             daily = data["daily"]
