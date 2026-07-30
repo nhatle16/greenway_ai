@@ -331,6 +331,23 @@ def get_ground_route(
 
 
 @tool
+def get_nearest_airport(
+    location: Dict[str, float],
+    radius_km: int = 50
+) -> Dict[str, Any]:
+    """Find the nearest commercial airport and its 3-letter IATA code for geographic coordinates.
+
+    Args:
+        location (Dict[str, float]): Latitude and longitude - {"lat": float, "lng": float}
+        radius_km (int, optional): Search radius in kilometers. Defaults to 50.
+
+    Returns:
+        Dict[str, Any]: Primary nearest airport (IATA code, name, location) and alternatives.
+    """
+    return _get_nearest_airport_impl(location=location, radius_km=radius_km)
+
+
+@tool
 def get_flight_options(
     origin: str,
     destination: str,
