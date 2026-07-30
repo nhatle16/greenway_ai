@@ -4,6 +4,7 @@ from langchain.agents import create_agent
 from src.tools.search import web_search
 from src.tools.location_tools import geocode
 from src.tools.weather_tools import get_weather_current, get_weather_forecast, get_weather_hourly
+from src.tools.travel_tools import get_ground_route, get_flight_options, get_nearest_airport
 from pathlib import Path
 
 load_dotenv()
@@ -38,7 +39,10 @@ root_agent = create_agent(
         geocode,
         get_weather_current,
         get_weather_forecast,
-        get_weather_hourly
+        get_weather_hourly,
+        get_ground_route,
+        get_flight_options,
+        get_nearest_airport
     ],
     system_prompt=load_prompt("root")
 )
