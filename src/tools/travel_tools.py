@@ -28,7 +28,7 @@ def _get_ground_route_impl(
     api_key = os.getenv("GOOGLE_MAPS_SERVER_KEY")
     if not api_key:
         return {"error": "Missing GOOGLE_MAPS_SERVER_KEY."}
-    
+
     # Map generic modes to Google Routes API internal values
     mode_mapping = {
         "driving": "DRIVE",
@@ -38,17 +38,17 @@ def _get_ground_route_impl(
         "walking": "WALK"
     }
 
-    # Get the actual Google Routes API 
+    # Get the actual Google Routes API
     google_mode = mode_mapping.get(mode, "DRIVE")
-    
+
     url = "https://routes.googleapis.com/directions/v2:computeRoutes"
-    
+
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": api_key,
         "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.description"     # configure filters
     }
-    
+
     body = {
         "origin": {
             "location": {
@@ -69,13 +69,13 @@ def _get_ground_route_impl(
         "travelMode": google_mode,
         "routingPreference": "TRAFFIC_AWARE" if google_mode in ["DRIVE", "TWO_WHEELER"] else "ROUTING_PREFERENCE_UNSPECIFIED"
     }
-    
+
     try:
-        response = requests.get(url, headers=headers, json=body, timeout=10)
+        response = requests.post(url, headers=headers, json=body, timeout=10)
         response.raise_for_status()
         data = response.json()
-        
-        if "routes" in data and len(data["routes"] > 0):
+
+        if "routes" in data and len(data["routes"]) > 0:
             route = data["routes"][0]
             distance_meters = route.get("distanceMeters", 0)
             duration_seconds = int(route.get("duration", "0s").replace("s", ""))
@@ -89,9 +89,76 @@ def _get_ground_route_impl(
             }
 
         return {"error": f"No routes found for mode '{mode}'."}
-        
+
     except requests.RequestException as e:
         return {"error": f"Routes API HTTP Error: {str(e)}"}
+
+
+def _get_nearest_airport_impl(
+    location: Dict[str, float],
+    radius_km: int = 50
+) -> Dict[str, Any]:
+    """Get the nearest (and alternative) airports to the given coordinates.
+
+    Args:
+        location (Dict[str, float]): Coordinates of the location. Expected in {'lat': float, 'lng': float}
+        radius_km (int, optional): The radius to search within. Defaults to 50.
+
+    Returns:
+        Dict[str, Any]: Structured summary of the nearest airport and alternative airports, or error details.
+    """
+    api_key = os.getenv("DUFFEL_API_KEY")
+    if not api_key:
+        return {"error": "Missing DUFFEL_API_KEY"}
+
+    lat, lng = location.get("lat"), location.get("lng")
+    if lat is None or lng is None:
+        return {"error": "Invalid location format. Expected {'lat': float, 'lng': float}"}
+
+    url = "https://api.duffel.com/places/suggestions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Duffel-Version": "v2",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    params = {
+        "lat": str(lat),
+        "lng": str(lng),
+        "rad": str(radius_km * 1000)    # convert km to meters
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        places = data.get("data", [])
+
+        # Get airports
+        airports = [p for p in places if p.get("type") == "airport" and p.get("iata_code")]
+
+        if not airports:
+            return {"error": f"No airports found within {radius_km}km of ({lat}, {lng})."}
+
+        formatted_airports = []
+        for a in airports[:3]:
+            formatted_airports.append({
+                "name": a.get("name"),
+                "iata_code": a.get("iata_code"),
+                "city_name": a.get("city_name"),
+                "time_zone": a.get("time_zone")
+            })
+
+        return {
+            "query_location": {"lat": lat, "lng": lng},
+            "nearest_airport": formatted_airports[0],
+            "alternative_airports": formatted_airports[1:] if len(formatted_airports) > 1 else []
+        }
+
+    except requests.RequestException as e:
+        return {"error": f"Duffel Places API Error: {str(e)}"}
 
 
 def _get_flights_impl(
@@ -99,7 +166,7 @@ def _get_flights_impl(
     destination: str,
     departure_date: str,
     passengers: int = 1,
-    max_result: int = 5
+    max_results: int = 5
 ) -> Dict[str, Any]:
     """Search for commercial flights via Duffel API.
 
@@ -108,7 +175,7 @@ def _get_flights_impl(
         destination (str): The IATA code of the destination airport (e.g., 'LHR').
         departure_date (str): Date of departure in format: YYYY-MM-DD
         passengers (int, optional): Number of passengers. Defaults to 1.
-        max_result (int, optional): Number of return results. Defaults to 5.
+        max_results (int, optional): Number of return results. Defaults to 5.
 
     Returns:
         Dict[str, Any]: Structured summary containing flight itineraries or error details.
@@ -117,7 +184,7 @@ def _get_flights_impl(
     if not api_key:
         return {"error": "Missing DUFFEL_API_KEY environment variable."}
 
-    # 1. Added ?return_offers=true to force Duffel to include offers inline
+    # Added ?return_offers=true to force Duffel to include offers inline
     url = "https://api.duffel.com/air/offer_requests?return_offers=true"
 
     headers = {
@@ -152,7 +219,7 @@ def _get_flights_impl(
         # List of flight options
         flights = []
 
-        for offer in offers[:max_result]:
+        for offer in offers[:max_results]:
             owner_airline = offer.get("owner", {}).get("name", "Unknown")
             total_amount = offer.get("total_amount", "0")
             total_currency = offer.get("total_currency", "USD")
@@ -165,7 +232,7 @@ def _get_flights_impl(
             segments = first_slice.get("segments", [])
             if not segments:
                 continue
-            
+
             # Slice-level origin and destination preserve full journey details
             first_segment = segments[0]
             last_segment = segments[-1]
@@ -187,19 +254,19 @@ def _get_flights_impl(
                     "destination": seg.get("destination", {}).get("iata_code")
                 })
 
-                # Full itinerary - including stops and stop details
-                flights.append({
-                    "airline": owner_airline,
-                    "stops": len(segments) - 1,
-                    "origin": f"{origin_info.get('iata_code')}, {origin_info.get('iata_country_code')}",
-                    "destination": f"{dest_info.get('iata_code')}, {dest_info.get('iata_country_code')}",
-                    "departure": first_segment.get("departing_at"),
-                    "arrival": last_segment.get("arriving_at"),
-                    "total_duration": first_slice.get("duration"),
-                    "price": total_amount,
-                    "currency": total_currency,
-                    "segments": segment_details
-                })
+            # Full itinerary - including stops and stop details
+            flights.append({
+                "airline": owner_airline,
+                "stops": len(segments) - 1,
+                "origin": f"{origin_info.get('iata_code')}, {origin_info.get('iata_country_code')}",
+                "destination": f"{dest_info.get('iata_code')}, {dest_info.get('iata_country_code')}",
+                "departure": first_segment.get("departing_at"),
+                "arrival": last_segment.get("arriving_at"),
+                "total_duration": first_slice.get("duration"),
+                "price": total_amount,
+                "currency": total_currency,
+                "segments": segment_details
+            })
 
         return {
             "origin": origin,
@@ -211,6 +278,36 @@ def _get_flights_impl(
 
     except requests.RequestException as e:
         return {"error": f"Duffel API HTTP Error: {str(e)}"}
+
+
+def _resolve_to_iata(location: str) -> Dict[str, Any]:
+    """Convert location string or IATA code into a valid 3-letter IATA code."""
+    cleaned = location.strip()
+
+    # Verify if input is already a 3-letter IATA code
+    if len(cleaned) == 3 and cleaned.isalpha():
+        return {"iata": cleaned.upper()}
+
+    try:
+        coords = geocode.invoke(location)   # get coordinates of location
+        if not isinstance(coords, dict) or "lat" not in coords or "lng" not in coords:
+            return {"error": f"Could not geocode location string: '{location}'."}
+
+    except Exception as e:
+        return {"error": f"Geocoding failed for '{location}': {str(e)}"}
+
+    # Resolve coordinates into nearest commercial airport using internal helper
+    airport = _get_nearest_airport_impl(location=coords)
+    if "error" in airport:
+        return {"error": f"Airport lookup failed for '{location}': {airport['error']}"}
+
+    nearest = airport.get("nearest_airport", {})
+    iata_code = nearest.get("iata_code")
+
+    if not iata_code:
+        return {"error": f"No valid IATA airport code found near '{location}'."}
+
+    return {"iata": iata_code}
 
 
 @tool
@@ -231,3 +328,44 @@ def get_ground_route(
         Dict[str, Any]: Route metrics (distance, duration, summary) or error message.
     """
     return _get_ground_route_impl(origin=origin, destination=destination, mode=mode)
+
+
+@tool
+def get_flight_options(
+    origin: str,
+    destination: str,
+    departure_date: str,
+    passengers: int = 1,
+    max_results: int = 5
+) -> Dict[str, Any]:
+    """Search commercial flights between two locations.
+
+    Args:
+        origin (str): The IATA code of the origin airport (e.g., 'YXE') or city name (e.g., 'Saskatoon').
+        destination (str): The IATA code of the destination airport (e.g., 'YYZ') or city name (e.g., 'Toronto').
+        departure_date (str): Date of departure in format: YYYY-MM-DD
+        passengers (int, optional): Number of passengers. Defaults to 1.
+        max_results (int, optional): Number of return results. Defaults to 5.
+
+    Returns:
+        Dict[str, Any]: _description_
+    """
+
+    origin_res = _resolve_to_iata(origin)
+    if "error" in origin_res:
+        return origin_res
+
+    dest_res = _resolve_to_iata(destination)
+    if "error" in dest_res:
+        return dest_res
+
+    origin_iata = origin_res["iata"]
+    dest_iata = dest_res["iata"]
+
+    return _get_flights_impl(
+        origin=origin_iata,
+        destination=dest_iata,
+        departure_date=departure_date,
+        passengers=passengers,
+        max_results=max_results
+    )
