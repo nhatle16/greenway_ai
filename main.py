@@ -1,10 +1,20 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Initialize the FastAPI application
 app = FastAPI(
     title="Greenway AI Agent API",
     version="1.0.0"
+)
+
+# Add CORS Middleware to allow requests from local frontend clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
