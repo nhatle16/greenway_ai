@@ -1,6 +1,10 @@
+import asyncio
+import json
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from src.agent import root_agent
@@ -69,3 +73,79 @@ async def chat_sync(request: ChatRequest) -> ChatResponse:
         )
     except HTTPException as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """Streaming endpoint yielding Server-Sent Events (SSE) token-by-token."""
+    config = {}
+    
+    # Thread id from request exists
+    if request.thread_id:
+        config["configurable"] = {"thread_id": request.thread_id}
+        
+    async def event_generator():
+        try:
+            # Send initial metadata chunk with the active thread_id
+            init_payload = json.dumps({"type": "meta", "thread_id": request.thread_id})
+            yield f"data: {init_payload}\n\n"
+            
+            async for event in root_agent.astream_events(
+                {"messages": [("user", request.message)]},
+                config=config,
+                version="v2"
+            ):
+                kind = event.get("event")
+                
+                # Stream raw LLM text tokens
+                if kind == "on_chat_model_stream":
+                    chunk = event.get("data", {}).get("chunk")  # extract message chunk
+                    if chunk and hasattr(chunk, "content"):     # extract content
+                        content = chunk.content
+                        text_content = ""
+                        if isinstance(content, str):            # content is a plain string
+                            text_content = content
+                        elif isinstance(content, list):         # content is a list of 
+                            parts = []
+                            for block in content:
+                                if isinstance(block, str):      # the item is a plain string
+                                    parts.append(block)
+                                # the item is a block dict
+                                elif isinstance(block, dict) and block.get("type") == "text":
+                                    parts.append(block.get("text", ""))
+                                elif isinstance(block, dict) and "text" in block:
+                                    parts.append(str(block["text"]))
+                            text_content = "".join(parts)       # combining text blocks into a single string
+
+                        if text_content:
+                            payload = json.dumps({"type": "stream", "content": text_content})
+                            yield f"data: {payload}\n\n"
+                            await asyncio.sleep(0)  # flush control back to event loop
+                
+                # Stream tool execution
+                elif kind == "on_tool_start":
+                    tool_input = event.get("data", {}).get("input")
+                    payload = json.dumps({
+                        "type": "tool_start",
+                        "tool": event.get("name"),
+                        "input": str(tool_input) if tool_input is not None else None
+                    })
+                    yield f"data: {payload}\n\n"
+                    
+                elif kind == "on_tool_end":
+                    tool_output = event.get("data", {}).get("output")
+                    output_str = getattr(tool_output, "content", str(tool_output)) if tool_output is not None else None
+                    payload = json.dumps({
+                        "type": "tool_end",
+                        "tool": event.get("name"),
+                        "output": output_str
+                    })
+                    yield f"data: {payload}\n\n"
+                    
+            done_payload = json.dumps({"type": "done", "thread_id": request.thread_id})
+            yield f"data: {done_payload}\n\n"
+                
+        except Exception as e:  # noqa: BLE001
+            error_payload = json.dumps({"type": "error", "detail": str(e)})
+            yield f"data: {error_payload}\n\n"
+        
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
