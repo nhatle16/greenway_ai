@@ -1,7 +1,12 @@
-from fastapi import FastAPI
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from src.agent import root_agent
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize the FastAPI application
 app = FastAPI(
@@ -36,3 +41,31 @@ async def health_check():
         "service": "greenway_ai",
         "version": "1.0.0"
     }
+
+
+@app.post("/api/chat/sync")
+async def chat_sync(request: ChatRequest) -> ChatResponse:
+    """Synchronous endpoint for single-turn chat requests with no streaming"""
+    config = {}
+    
+    # Thread id from request exists
+    if request.thread_id:
+        config["configurable"] = {"thread_id": request.thread_id}
+    
+    try:
+        # Run the agent asynchronously
+        result = await root_agent.ainvoke(
+            {"messages": [("user", request.message)]},
+            config=config
+        )
+        
+        # Get final response from the last message in thread
+        last_message = result["messages"][-1]
+        response_text = getattr(last_message, "text", "")
+        
+        return ChatResponse(
+            response=response_text,
+            thread_id=result.get("configurable", {}).get("thread_id")
+        )
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail=str(e))
