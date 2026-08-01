@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 
 # Initialize the FastAPI application
@@ -16,6 +17,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, examples=["What's the weather in Saskatoon?"])
+    thread_id: str | None = Field(default=None, description="Optional thread/session ID for multi-turn conversation history")
+
+class ChatResponse(BaseModel):
+    response: str = Field(..., min_length=1, examples=["The weather in Saskatoon is ..."])
+    thread_id: str | None = Field(default=None, description="New thread/session ID if a new one was created")
 
 
 # Define a health check route
