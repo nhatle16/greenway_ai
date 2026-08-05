@@ -1,9 +1,9 @@
-import os
-import requests
+from typing import Any
 
+import requests
 from dotenv import load_dotenv
-from typing import Dict, Any
 from langchain.tools import tool
+
 from .location_tools import _geocode_impl
 
 load_dotenv()
@@ -49,7 +49,7 @@ def _fetch_open_meteo_impl(
     forecast_days: int = 3,
     include_hourly: bool = False,
     forecast_hours: int = 6
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """_summary_
 
     Args:
@@ -168,7 +168,7 @@ def _fetch_open_meteo_impl(
         }
         
     except requests.RequestException as e:
-        return {"error": f"Open-Meteo HTTP request failed: {str(e)}"}
+        return {"error": f"Open-Meteo HTTP request failed: {e!s}"}
 
 
 @tool
@@ -224,7 +224,7 @@ def get_weather_forecast(location: str, days: int = 3, units: str = 'metric'):
 
 
 @tool
-def get_weather_hourly(location: str, hours: int = 6, units: str = 'metric') -> Dict[str, Any]:
+def get_weather_hourly(location: str, hours: int = 6, units: str = 'metric') -> dict[str, Any]:
     """_summary_
 
     Args:
