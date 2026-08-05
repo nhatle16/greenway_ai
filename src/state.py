@@ -47,7 +47,7 @@ class AgentState(TypedDict, total=False):
     
     Tracks conversation history along with contextual user data (location, units, user profile).
     """
-    messages: Annotated[list[AnyMessage], add_messages]
+    messages: list[AnyMessage]
     user_location: UserLocation | None
     units: str
     user_id: str | None
