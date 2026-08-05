@@ -30,6 +30,17 @@ class TripState(TypedDict, total=False):
     total_carbon_emission_kg: float | None
 
 
+# Weather Context Schema
+class WeatherContext(TypedDict, total=False):
+    location_name: str | None
+    temperature: float | None
+    condition: str | None
+    precipitation_mm: float | None
+    humidity: float | None
+    wind_speed: float | None
+    is_outdoor_friendly: bool | None        # Helper flag for biking/walking suitability
+    
+
 # Agent State Schema
 class AgentState(TypedDict, total=False):
     """Custom State schema for Greenway AI Agent.
@@ -42,3 +53,6 @@ class AgentState(TypedDict, total=False):
     user_id: str | None
     user_name: str | None
     language: str | None
+    preferences: TravelPreferences | None
+    active_trip: TripState | None
+    weather_context: WeatherContext | None
