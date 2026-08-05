@@ -1,9 +1,10 @@
 import os
-import requests
+from typing import Any, Literal
 
+import requests
 from dotenv import load_dotenv
-from typing import Dict, Any, Literal
 from langchain.tools import tool
+
 from .location_tools import geocode
 
 load_dotenv()
@@ -11,10 +12,10 @@ load_dotenv()
 TravelMode = Literal["driving", "motorcycle", "transit", "bicycling", "walking"]
 
 def _get_ground_route_impl(
-    origin: Dict[str, float],
-    destination: Dict[str, float],
+    origin: dict[str, float],
+    destination: dict[str, float],
     mode: TravelMode = "driving"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Calculate ground routing between two lat/lng points using Google Routes API
 
     Args:
@@ -91,13 +92,13 @@ def _get_ground_route_impl(
         return {"error": f"No routes found for mode '{mode}'."}
 
     except requests.RequestException as e:
-        return {"error": f"Routes API HTTP Error: {str(e)}"}
+        return {"error": f"Routes API HTTP Error: {e!s}"}
 
 
 def _get_nearest_airport_impl(
-    location: Dict[str, float],
+    location: dict[str, float],
     radius_km: int = 50
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get the nearest (and alternative) airports to the given coordinates.
 
     Args:
@@ -158,7 +159,7 @@ def _get_nearest_airport_impl(
         }
 
     except requests.RequestException as e:
-        return {"error": f"Duffel Places API Error: {str(e)}"}
+        return {"error": f"Duffel Places API Error: {e!s}"}
 
 
 def _get_flights_impl(
@@ -167,7 +168,7 @@ def _get_flights_impl(
     departure_date: str,
     passengers: int = 1,
     max_results: int = 5
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Search for commercial flights via Duffel API.
 
     Args:
@@ -277,10 +278,10 @@ def _get_flights_impl(
         }
 
     except requests.RequestException as e:
-        return {"error": f"Duffel API HTTP Error: {str(e)}"}
+        return {"error": f"Duffel API HTTP Error: {e!s}"}
 
 
-def _resolve_to_iata(location: str) -> Dict[str, Any]:
+def _resolve_to_iata(location: str) -> dict[str, Any]:
     """Convert location string or IATA code into a valid 3-letter IATA code."""
     cleaned = location.strip()
 
@@ -294,7 +295,7 @@ def _resolve_to_iata(location: str) -> Dict[str, Any]:
             return {"error": f"Could not geocode location string: '{location}'."}
 
     except Exception as e:
-        return {"error": f"Geocoding failed for '{location}': {str(e)}"}
+        return {"error": f"Geocoding failed for '{location}': {e!s}"}
 
     # Resolve coordinates into nearest commercial airport using internal helper
     airport = _get_nearest_airport_impl(location=coords)
@@ -312,10 +313,10 @@ def _resolve_to_iata(location: str) -> Dict[str, Any]:
 
 @tool
 def get_ground_route(
-    origin: Dict[str, float],
-    destination: Dict[str, float],
+    origin: dict[str, float],
+    destination: dict[str, float],
     mode: TravelMode = 'driving'
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Calculate ground travel routes, distance, and ETA between two latitude/longitude points.
     Supports driving, motorcycle (two-wheeler), public transit, bicycling, and walking via Google Maps Routes API.
 
@@ -332,9 +333,9 @@ def get_ground_route(
 
 @tool
 def get_nearest_airport(
-    location: Dict[str, float],
+    location: dict[str, float],
     radius_km: int = 50
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Find the nearest commercial airport and its 3-letter IATA code for geographic coordinates.
 
     Args:
@@ -354,7 +355,7 @@ def get_flight_options(
     departure_date: str,
     passengers: int = 1,
     max_results: int = 5
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Search commercial flights between two locations.
 
     Args:
