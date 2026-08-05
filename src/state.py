@@ -12,6 +12,24 @@ class UserLocation(TypedDict, total=False):
     country: str
 
 
+# Travel Preferences Schema
+class TravelPreferences(TypedDict, total=False):
+    home_airport: str | None
+    preferred_mode: str | None
+    cabin_class: str | None
+    currency: str
+    max_budget: float | None
+    prioritize_eco: bool
+
+
+# Trip State Schema
+class TripState(TypedDict, total=False):
+    origin: UserLocation | None
+    destination: UserLocation | None
+    travel_preferences: TravelPreferences | None
+    total_carbon_emission_kg: float | None
+
+
 # Agent State Schema
 class AgentState(TypedDict, total=False):
     """Custom State schema for Greenway AI Agent.
