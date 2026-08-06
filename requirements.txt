@@ -1,10 +1,10 @@
 langchain
+langgraph
+langgraph-cli[inmem]
 langchain-google-genai
 python-dotenv
 requests
-requests-cache
-pydantic
-langgraph
-langgraph-cli
-langgraph-api
-tavily
+fastapi
+uvicorn
+tavily-python
+ruff
