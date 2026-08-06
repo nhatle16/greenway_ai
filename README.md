@@ -1,0 +1,152 @@
+# Greenway AI: Optimal Route Navigation Agent
+
+Greenway AI is an AI-powered agent application designed to search for and navigate the most optimal routes based on provided data. Built on top of **LangChain** and **LangGraph**, it utilizes stateful state management and tools to dynamically process environmental and routing parameters.
+
+> ⚠️ **Project Status**: Full-stack integration is currently in progress. While the standalone **frontend** and **backend** architectures have just been designed and built, their complete end-to-end integration is ongoing. 
+>
+> Therefore, this guide focuses strictly on **local deployment** and running the core agent system using the **LangGraph CLI**, bypassing the current custom frontend or backend API implementations.
+
+---
+
+## Features
+
+- **Stateful Routing Agent**: Leverages LangChain for complex, stateful multi-turn routing decisions.
+- **Dynamic Data Tools**: Uses Model Context Protocol (MCP) and LangChain tools to integrate external data.
+- **Optimal Route Navigation**: Evaluates input parameters to compute the most optimal route.
+- **Local Visualization & Debugging**: Fully compatible with LangGraph Studio for interactive graph visualization.
+
+---
+
+## Directory Structure Overview
+
+Current project structure:
+```text
+├── README.md
+├── langgraph.json                     # LangGraph CLI configuration file defining graphs and environments
+├── main.py
+├── pyproject.toml                     # Project configuration file
+├── requirements.txt                   # Python package dependencies
+├── .gitignore
+└── src
+    ├── agent.py                       # Orchestrator agent definition
+    ├── prompts                        # Agents' prompts
+    │   └── root
+    │       └── system.md
+    ├── state.py                       # State schema
+    └── tools                          # Agent's custom tools
+        ├── __init__.py
+        ├── location_tools.py          # Geocoding & geographical tools
+        ├── search.py                  # Web search tools
+        ├── state_tools.py             # Agent state tools
+        ├── travel_tools.py            # Ground route & flight tools
+        └── weather_tools.py           # Weather forecast tools
+```
+---
+
+## Prerequisites
+
+To run this application locally, ensure you have the following installed:
+
+1. **Python 3.10+** (Python 3.11 or 3.12 recommended)
+2. **Docker** (Required by the LangGraph CLI for local server hosting)
+3. **LangGraph CLI** (Used to build, run, and test the graphs locally)
+
+---
+
+## Local Installation
+
+### 1. Clone the Repository
+Clone the repository and navigate into the project directory:
+```bash
+git clone https://github.com/nhatle16/greenway_ai.git
+cd greenway_ai
+```
+
+### 2. Set Up a Virtual Environment
+Create and activate a clean Python virtual environment:
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows (Command Prompt):
+venv\Scripts\activate
+# On Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+```
+
+### 3. Install Dependencies
+Install the required packages listed in `requirements.txt` with `pip`:
+```bash
+pip install -r requirements.txt
+```
+or with `uv`:
+```bash
+uv pip install -r requirements.txt
+```
+
+---
+
+## Configuration & Environment Variables
+
+Create a `.env` file in the root directory of the project to configure your agent's API keys and environment variables:
+
+```ini
+# Core LLM API Keys (depending on your configured provider, e.g., OpenAI or Anthropic)
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# External Application API Keys
+TAVILY_API_KEY=your_tavily_api_key_here
+DUFFEL_API_KEY=your_duffel_api_key_here
+GOOGLE_MAPS_SERVER_KEY=your_google_maps_platform_api_key_here
+
+# LangSmith Tracing & Observability
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+LANGCHAIN_API_KEY=your_langsmith_api_key_here
+LANGCHAIN_PROJECT=greenway_ai
+LANGSMITH_DEPLOYMENT_NAME='greenway-ai'
+```
+
+You can get API keys from these links:
+- [Tavily API Platform](https://app.tavily.com/home)
+- [Duffel](https://app.duffel.com/)
+- [Google Maps Platform](https://mapsplatform.google.com/)
+- [LangSmith](https://smith.langchain.com)
+---
+
+## Running with LangGraph CLI
+
+The LangGraph CLI reads the `langgraph.json` configuration to package and run your stateful graph locally [3].
+
+### 1. Start the Local Development Server
+Launch the LangGraph development server using the following command:
+```bash
+langgraph dev
+```
+*Note: If you are using an older version of the CLI, you can also use `langgraph up`.*
+
+### 2. Testing and Visualizing in LangGraph Studio
+Once the server is running, it will output a local URL (typically `http://localhost:2024` or similar).
+
+1. Open **[LangGraph Studio](https://smith.langchain.com/studio)** in your browser or launch the LangGraph Studio Desktop application.
+2. Connect to your local server by pointing it to your project directory or the running local URL.
+3. In the Studio interface, you can:
+   - Input custom route data to see how the agent navigates it.
+   - Inspect the exact execution state, active nodes, and tool calls.
+   - Debug stateful transitions interactively.
+  
+## Web-based Chat Interface
+Don't want to use a CLI/Terminal to interact with the agent? You can try the pre-built Agent Chat UI by going to [agentchat.vercel.app](https://agentchat.vercel.app/) and configure as follows:
+
+1. Run a local LangGraph agent server using `langgraph dev` or deploy one to LangGraph Cloud.
+2. Open the web app by going to [agentchat.vercel.app](https://agentchat.vercel.app/).
+3. Configure the connection:
+   - Set the deployment URL to `http://localhost:2024` for local development or your hosted LangGraph deployment endpoint.
+   - Set to the identifier defined in your langgraph.json configuration file to `Graph ID`.
+   - LangSmith API Key (optional): the API key is required if you need to authenticate requests sent to protected LangGraph servers or deployments.
+4. Click `Continue` to proceed to the chat UI.
