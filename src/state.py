@@ -1,5 +1,6 @@
-from typing import TypedDict
+from typing import Annotated, TypedDict
 
+from langgraph.graph.message import add_messages
 from langchain_core.messages import AnyMessage
 
 
@@ -46,7 +47,7 @@ class AgentState(TypedDict, total=False):
     
     Tracks conversation history along with contextual user data (location, units, user profile).
     """
-    messages: list[AnyMessage]
+    messages: Annotated[list[AnyMessage], add_messages]
     user_location: UserLocation | None
     units: str
     user_id: str | None
