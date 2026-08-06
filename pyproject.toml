@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "greenway-ai"
+version = "0.1.0"
+description = "Greenway AI - Sustainable Travel & Weather Assistant using LangChain"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain",
+    "langgraph",
+    "langchain-google-genai",
+    "langgraph-cli[inmem]",
+    "python-dotenv",
+    "requests",
+    "fastapi",
+    "uvicorn",
+    "tavily-python",
+    "ruff"
+]
+
+[project.optional-dependencies]
+dev = [
+    "langgraph-cli[inmem]",
+    "ruff"
+]
