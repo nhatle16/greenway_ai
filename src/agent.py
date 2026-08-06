@@ -7,7 +7,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from src.state import AgentState
 from src.tools.location_tools import geocode
 from src.tools.search import web_search
-from src.tools.state_tools import update_user_profile
+from src.tools.state_tools import update_user_location, update_user_profile
 from src.tools.travel_tools import (
     get_flight_options,
     get_ground_route,
@@ -55,7 +55,8 @@ root_agent = create_agent(
         get_ground_route,
         get_flight_options,
         get_nearest_airport,
-        update_user_profile
+        update_user_profile,
+        update_user_location
     ],
     state_schema=AgentState,
     system_prompt=load_prompt("root")
