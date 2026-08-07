@@ -1,0 +1,14 @@
+langchain
+langgraph
+langchain-google-genai
+langgraph-cli[inmem]
+python-dotenv
+requests
+fastapi
+uvicorn
+tavily-python
+ruff
+
+[dev]
+langgraph-cli[inmem]
+ruff

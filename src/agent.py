@@ -13,6 +13,8 @@ from src.tools.state_tools import (
     update_travel_preferences,
     update_user_location,
     update_user_profile,
+    save_user_fact,
+    get_user_facts
 )
 from src.tools.travel_tools import (
     get_flight_options,
@@ -65,7 +67,9 @@ root_agent = create_agent(
         update_user_location,
         update_travel_preferences,
         update_active_trip,
-        update_current_weather
+        update_current_weather,
+        save_user_fact,
+        get_user_facts
     ],
     state_schema=AgentState,
     system_prompt=load_prompt("root")

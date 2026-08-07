@@ -3,6 +3,7 @@ from typing import Annotated
 from langchain.messages import ToolMessage
 from langchain.tools import ToolRuntime, tool
 from langgraph.prebuilt import InjectedState
+from langgraph.store.base import BaseStore
 from langgraph.types import Command
 
 
@@ -193,3 +194,37 @@ def update_current_weather(
             "weather_context": state_updates
         }
     )
+
+
+@tool
+def save_user_fact(key: str, value: str, runtime: ToolRuntime) -> str:
+    """Saves a long-term fact about the user (e.g., name, travel preferences)."""
+    user_id = runtime.context.get("user_id", "default_user")
+    namespace = ("users", user_id)
+    data = runtime.store.get(namespace, "profile")
+    
+    profile = data.value if data else {}
+    
+    profile[key] = value
+    
+    runtime.store.put(
+        namespace,
+        "profile",
+        profile
+    )
+    
+    return f"Successfully remembered '{key}: {value}' for user '{user_id}'."
+
+
+@tool
+def get_user_facts(runtime: ToolRuntime) -> dict:
+    """Retrieves all saved long-term facts for the current user."""
+    namespace = ("users", runtime.context.get("user_id", "default_user"))
+    
+    item = runtime.store.get(namespace, "profile")
+    
+    if item is None:
+        return {}
+    
+    return item.value
+    
