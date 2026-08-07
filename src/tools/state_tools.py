@@ -140,3 +140,56 @@ def update_active_trip(
             "active_trip": state_updates
         }
     )
+
+
+@tool
+def update_current_weather(
+    runtime: ToolRuntime,
+    state: Annotated[dict, InjectedState],
+    location_name: str | None = None,
+    temperature: float | None = None,
+    condition: str | None = None,
+    precipitation_mm: float | None = None,
+    humidity: float | None = None,
+    wind_speed: float | None = None,
+    is_outdoor_friendly: bool | None = None
+) -> Command:
+    """Updates the user's current weather context. Provide only the fields that need updating."""
+    current_weather = state.get("weather_context") or {}
+    state_updates = {**current_weather}
+    
+    updated = False
+    
+    if location_name is not None:
+        state_updates["location_name"] = location_name
+        updated = True
+    if temperature is not None:
+        state_updates["temperature"] = temperature
+        updated = True
+    if condition is not None:
+        state_updates["condition"] = condition
+        updated = True
+    if precipitation_mm is not None:
+        state_updates["precipitation_mm"] = precipitation_mm
+        updated = True
+    if humidity is not None:
+        state_updates["humidity"] = humidity
+        updated = True
+    if wind_speed is not None:
+        state_updates["wind_speed"] = wind_speed
+        updated = True
+    if is_outdoor_friendly is not None:
+        state_updates["is_outdoor_friendly"] = is_outdoor_friendly
+        updated = True
+
+    if not updated:
+        msg = "No weather context updates were provided."
+    else:
+        msg = "Successfully updated weather context."
+
+    return Command(
+        update={
+            "messages": [ToolMessage(msg, tool_call_id=runtime.tool_call_id)],
+            "weather_context": state_updates
+        }
+    )

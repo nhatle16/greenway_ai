@@ -9,6 +9,7 @@ from src.tools.location_tools import geocode
 from src.tools.search import web_search
 from src.tools.state_tools import (
     update_active_trip,
+    update_current_weather,
     update_travel_preferences,
     update_user_location,
     update_user_profile,
@@ -63,7 +64,8 @@ root_agent = create_agent(
         update_user_profile,
         update_user_location,
         update_travel_preferences,
-        update_active_trip
+        update_active_trip,
+        update_current_weather
     ],
     state_schema=AgentState,
     system_prompt=load_prompt("root")
