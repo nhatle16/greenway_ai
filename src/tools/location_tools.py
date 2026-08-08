@@ -39,7 +39,7 @@ def _geocode_impl(location: str) -> dict[str, Any]:
                 "lng": loc["lng"]
             }
         return {"error": f"Geocoding failed for {location}: {data.get('status')}"}
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         return {"error": f"HTTP Error: {e!s}"}
     
     
