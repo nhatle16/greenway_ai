@@ -126,8 +126,8 @@ def _fetch_open_meteo_impl(
                     "feels_like": f"{hourly['apparent_temperature'][i]} {temp_symbol}",
                     "humidity": f"{hourly['relative_humidity_2m'][i]} %",
                     "condition": WMO_CODE_MAP.get(code, "Unknown"),
-                    "dew_point": f"{hourly['dew_point_2m'][i]} {units_info.get('dew_point_2m', "°C")}",
-                    "wind_speed": f"{hourly['wind_speed_10m'][i]} {units_info.get('wind_speed_10m', "km/h")}"
+                    "dew_point": f"{hourly['dew_point_2m'][i]} {units_info.get('dew_point_2m', '°C')}",
+                    "wind_speed": f"{hourly['wind_speed_10m'][i]} {units_info.get('wind_speed_10m', 'km/h')}"
                 })
                 
             return {"forecast": hourly_list}
