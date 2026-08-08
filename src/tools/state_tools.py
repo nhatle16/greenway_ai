@@ -3,7 +3,6 @@ from typing import Annotated
 from langchain.messages import ToolMessage
 from langchain.tools import ToolRuntime, tool
 from langgraph.prebuilt import InjectedState
-from langgraph.store.base import BaseStore
 from langgraph.types import Command
 
 
@@ -199,15 +198,23 @@ def update_current_weather(
 @tool
 def save_user_fact(key: str, value: str, runtime: ToolRuntime) -> str:
     """Saves a long-term fact about the user (e.g., name, travel preferences)."""
-    user_id = runtime.context.get("user_id", "default_user")
-    namespace = ("users", user_id)
-    data = runtime.store.get(namespace, "profile")
+    context = runtime.context or {}
+    user_id = context.get("user_id", "default_user")
     
+    store = runtime.store
+
+    if store is None:
+        return "Unable to save user fact: long-term memory is unavailable."
+    
+    namespace = ("users", user_id)
+    
+    data = store.get(namespace, "profile")
     profile = data.value if data else {}
     
+    # Update store values
     profile[key] = value
     
-    runtime.store.put(
+    store.put(
         namespace,
         "profile",
         profile
@@ -219,9 +226,18 @@ def save_user_fact(key: str, value: str, runtime: ToolRuntime) -> str:
 @tool
 def get_user_facts(runtime: ToolRuntime) -> dict:
     """Retrieves all saved long-term facts for the current user."""
-    namespace = ("users", runtime.context.get("user_id", "default_user"))
+    # Validate the provided context
+    context = runtime.context or {}
+    store = runtime.store
+
+    if store is None:
+        return {
+            "error": "Long-term memory is unavailable."
+        }
     
-    item = runtime.store.get(namespace, "profile")
+    namespace = ("users", context.get("user_id", "default_user"))
+    
+    item = store.get(namespace, "profile")
     
     if item is None:
         return {}
