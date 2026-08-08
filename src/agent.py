@@ -8,13 +8,13 @@ from src.state import AgentState
 from src.tools.location_tools import geocode
 from src.tools.search import web_search
 from src.tools.state_tools import (
+    get_user_facts,
+    save_user_fact,
     update_active_trip,
     update_current_weather,
     update_travel_preferences,
     update_user_location,
     update_user_profile,
-    save_user_fact,
-    get_user_facts
 )
 from src.tools.travel_tools import (
     get_flight_options,
@@ -40,6 +40,14 @@ def load_prompt(agent_name: str) -> str:
     system_file = prompt_dir / "system.md"
     if system_file.exists():
         prompt_parts.append(system_file.read_text())
+        
+    rules_file = prompt_dir / "rules.md"
+    if rules_file.exists():
+        prompt_parts.append(rules_file.read_text())
+
+    examples_file = prompt_dir / "examples.md"
+    if examples_file.exists():
+        prompt_parts.append(examples_file.read_text())\
         
     return "\n\n".join(prompt_parts)
 
