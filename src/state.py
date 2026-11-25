@@ -3,6 +3,15 @@ from typing import Annotated, TypedDict
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
+def merge_dicts(old: dict | None, new: dict | None) -> dict:
+    """Merge partial updates so parallel tool calls combine instead of colliding."""
+    merged = {**(old or {})}
+    for key, value in (new or {}).items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            # Recursively merge nested dictionaries
+            value = merge_dicts(merged[key], value)
+        merged[key] = value
+    return merged
 
 # User Location Schema
 class UserLocation(TypedDict, total=False):
@@ -53,6 +62,6 @@ class AgentState(TypedDict, total=False):
     user_id: str | None
     user_name: str | None
     language: str | None
-    preferences: TravelPreferences | None
-    active_trip: TripState | None
-    weather_context: WeatherContext | None
+    preferences: Annotated[TravelPreferences | None, merge_dicts]
+    active_trip: Annotated[TripState | None, merge_dicts]
+    weather_context: Annotated[WeatherContext | None, merge_dicts]
