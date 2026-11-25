@@ -2,6 +2,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain.agents.middleware import ToolRetryMiddleware
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from src.state import AgentState
@@ -80,5 +81,12 @@ root_agent = create_agent(
         get_user_facts
     ],
     state_schema=AgentState,
-    system_prompt=load_prompt("root")
+    system_prompt=load_prompt("root"),
+    middleware=[ToolRetryMiddleware(
+        max_retries=1,
+        on_failure=lambda exc: (
+            f"Tool failed ({type(exc).__name__}). The service may be unavailable; "
+            "tell the user or try a different approach."
+        )
+    )]
 )
