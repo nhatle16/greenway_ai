@@ -294,8 +294,9 @@ def _resolve_to_iata(location: str) -> dict[str, Any]:
         if not isinstance(coords, dict) or "lat" not in coords or "lng" not in coords:
             return {"error": f"Could not geocode location string: '{location}'."}
 
-    except Exception as e:
-        return {"error": f"Geocoding failed for '{location}': {e!s}"}
+    except Exception:
+        # Never include the exception text: geocoding URLs contain the API key
+        return {"error": f"Geocoding failed for '{location}'."}
 
     # Resolve coordinates into nearest commercial airport using internal helper
     airport = _get_nearest_airport_impl(location=coords)

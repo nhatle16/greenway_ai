@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -11,6 +12,8 @@ from src.agent import root_agent
 
 # Load environment variables from .env file
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # Initialize the FastAPI application
 app = FastAPI(
@@ -144,8 +147,10 @@ async def chat_stream(request: ChatRequest):
             done_payload = json.dumps({"type": "done", "thread_id": request.thread_id})
             yield f"data: {done_payload}\n\n"
                 
-        except Exception as e:  # noqa: BLE001
-            error_payload = json.dumps({"type": "error", "detail": str(e)})
+        except Exception:  # noqa: BLE001
+            # Full details stay in server logs; the client gets a generic message
+            logger.exception("Agent stream failed")
+            error_payload = json.dumps({"type": "error", "detail": "Something went wrong. Please try again."})
             yield f"data: {error_payload}\n\n"
         
     return StreamingResponse(event_generator(), media_type="text/event-stream")

@@ -39,8 +39,9 @@ def _geocode_impl(location: str) -> dict[str, Any]:
                 "lng": loc["lng"]
             }
         return {"error": f"Geocoding failed for {location}: {data.get('status')}"}
-    except requests.exceptions.HTTPError as e:
-        return {"error": f"HTTP Error: {e!s}"}
+    except requests.RequestException:
+        # Never include the exception text: its URL contains the API key
+        return {"error": f"Geocoding service unavailable for {location}."}
     
     
 @tool
