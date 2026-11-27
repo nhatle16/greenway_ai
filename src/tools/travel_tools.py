@@ -288,9 +288,9 @@ def _resolve_to_iata(location: str) -> dict[str, Any]:
     """Convert location string or IATA code into a valid 3-letter IATA code."""
     cleaned = location.strip()
 
-    # Verify if input is already a 3-letter IATA code
-    if len(cleaned) == 3 and cleaned.isalpha():
-        return {"iata": cleaned.upper()}
+    # Only an all-caps 3-letter input is a code ("YXE"); "Rio" or "Ufa" is a city name to geocode
+    if len(cleaned) == 3 and cleaned.isalpha() and cleaned.isupper():
+        return {"iata": cleaned}
 
     try:
         coords = geocode.invoke(location)   # get coordinates of location
