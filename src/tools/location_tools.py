@@ -7,6 +7,10 @@ from langchain.tools import tool
 
 load_dotenv()
 
+# Successful lookups only, so a temporary failure is retried next time
+# shortcut: unbounded and per-process; switch to a TTL/LRU cache if the server runs for long
+_geocode_cache: dict[str, dict[str, float]] = {}
+
 
 def _geocode_impl(location: str) -> dict[str, Any]:
     """Convert the location name into the exact geographic coordinates
@@ -17,6 +21,9 @@ def _geocode_impl(location: str) -> dict[str, Any]:
     Returns:
         Dict[str, Any]: Latitude and longitude of the location if API call succeeds, error message otherwise.
     """
+    if location in _geocode_cache:
+        return dict(_geocode_cache[location])  # a copy, so callers can't alter the cached value
+
     api_key = os.getenv("GOOGLE_MAPS_SERVER_KEY")
     if not api_key:
         return {"error": "Missing GOOGLE_MAPS_SERVER_KEY."}
@@ -34,10 +41,8 @@ def _geocode_impl(location: str) -> dict[str, Any]:
 
         if data.get("status") == "OK" and data.get("results"):
             loc = data["results"][0]["geometry"]["location"]
-            return {
-                "lat": loc["lat"],
-                "lng": loc["lng"]
-            }
+            _geocode_cache[location] = {"lat": loc["lat"], "lng": loc["lng"]}
+            return dict(_geocode_cache[location])
         return {"error": f"Geocoding failed for {location}: {data.get('status')}"}
     except requests.RequestException:
         # Never include the exception text: its URL contains the API key
