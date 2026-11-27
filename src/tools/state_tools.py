@@ -163,13 +163,8 @@ def save_user_fact(key: str, value: str, runtime: ToolRuntime) -> str:
 
     namespace = ("users", user_id)
 
-    data = store.get(namespace, "profile")
-    profile = data.value if data else {}
-
-    # Update store values
-    profile[key] = value
-
-    store.put(namespace, "profile", profile)
+    # One item per fact: no read-modify-write, so parallel saves can't overwrite each other
+    store.put(namespace, key, {"value": value})
 
     return f"Successfully remembered '{key}: {value}' for user '{user_id}'."
 
@@ -186,9 +181,8 @@ def get_user_facts(runtime: ToolRuntime) -> dict:
 
     namespace = ("users", context.get("user_id", "default_user"))
 
-    item = store.get(namespace, "profile")
+    # shortcut: returns at most 100 facts, page with `offset` if users ever store more
+    items = store.search(namespace, limit=100)
 
-    if item is None:
-        return {}
-
-    return item.value
+    # Skip the legacy single "profile" item, which has no "value" field
+    return {item.key: item.value["value"] for item in items if "value" in item.value}
