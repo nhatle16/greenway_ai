@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 import requests
 from dotenv import load_dotenv
@@ -7,6 +7,8 @@ from langchain.tools import tool
 from .location_tools import _geocode_impl
 
 load_dotenv()
+
+Units = Literal["metric", "imperial"]
 
 
 # Weather interpretation codes from WMO (World Meteorological Organization)
@@ -44,7 +46,7 @@ WMO_CODE_MAP = {
 def _fetch_open_meteo_impl(
     lat: float,
     lng: float,
-    units: str = 'metric',
+    units: Units = 'metric',
     include_daily: bool = False,
     forecast_days: int = 3,
     include_hourly: bool = False,
@@ -172,7 +174,7 @@ def _fetch_open_meteo_impl(
 
 
 @tool
-def get_weather_current(location: str, units: str = 'metric'):
+def get_weather_current(location: str, units: Units = 'metric'):
     """Get the current weather for any city or region name.
 
     Args:
@@ -192,7 +194,7 @@ def get_weather_current(location: str, units: str = 'metric'):
 
 
 @tool
-def get_weather_forecast(location: str, days: int = 3, units: str = 'metric'):
+def get_weather_forecast(location: str, days: int = 3, units: Units = 'metric'):
     """Get the weather daily forecast for a city or region name during the upcoming days.
 
     Args:
@@ -224,7 +226,7 @@ def get_weather_forecast(location: str, days: int = 3, units: str = 'metric'):
 
 
 @tool
-def get_weather_hourly(location: str, hours: int = 6, units: str = 'metric') -> dict[str, Any]:
+def get_weather_hourly(location: str, hours: int = 6, units: Units = 'metric') -> dict[str, Any]:
     """Get the hour-by-hour weather forecast for a city or region over the next few hours.
 
     Args:
