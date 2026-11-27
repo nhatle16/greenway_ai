@@ -1,11 +1,14 @@
 import asyncio
 import json
 import logging
+from uuid import uuid4
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
 from pydantic import BaseModel, Field
 
 from src.agent import root_agent
@@ -14,6 +17,10 @@ from src.agent import root_agent
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# `langgraph dev` supplies its own persistence, so only the FastAPI copy gets one
+# shortcut: in-memory, so threads and facts are lost on restart; use a SQLite/Postgres saver and store to keep them
+agent = root_agent.copy(update={"checkpointer": InMemorySaver(), "store": InMemoryStore()})
 
 # Initialize the FastAPI application
 app = FastAPI(
@@ -53,46 +60,40 @@ async def health_check():
 @app.post("/api/chat/sync")
 async def chat_sync(request: ChatRequest) -> ChatResponse:
     """Synchronous endpoint for single-turn chat requests with no streaming"""
-    config = {}
-    
-    # Thread id from request exists
-    if request.thread_id:
-        config["configurable"] = {"thread_id": request.thread_id}
-    
+    # A checkpointer needs a thread id, so start a new thread when none is given
+    thread_id = request.thread_id or str(uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
+
     try:
         # Run the agent asynchronously
-        result = await root_agent.ainvoke(
+        result = await agent.ainvoke(
             {"messages": [("user", request.message)]},
             config=config
         )
-        
-        # Get final response from the last message in thread
-        last_message = result["messages"][-1]
-        response_text = getattr(last_message, "text", "")
-        
-        return ChatResponse(
-            response=response_text,
-            thread_id=result.get("configurable", {}).get("thread_id")
-        )
-    except HTTPException as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("Agent sync call failed")
+        raise HTTPException(status_code=500, detail="Something went wrong. Please try again.") from None
+
+    # Get final response from the last message in thread
+    last_message = result["messages"][-1]
+    response_text = getattr(last_message, "text", "")
+
+    return ChatResponse(response=response_text, thread_id=thread_id)
 
 @app.post("/api/chat/stream")
 async def chat_stream(request: ChatRequest):
     """Streaming endpoint yielding Server-Sent Events (SSE) token-by-token."""
-    config = {}
-    
-    # Thread id from request exists
-    if request.thread_id:
-        config["configurable"] = {"thread_id": request.thread_id}
-        
+    # A checkpointer needs a thread id, so start a new thread when none is given
+    thread_id = request.thread_id or str(uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
+
     async def event_generator():
         try:
             # Send initial metadata chunk with the active thread_id
-            init_payload = json.dumps({"type": "meta", "thread_id": request.thread_id})
+            init_payload = json.dumps({"type": "meta", "thread_id": thread_id})
             yield f"data: {init_payload}\n\n"
             
-            async for event in root_agent.astream_events(
+            async for event in agent.astream_events(
                 {"messages": [("user", request.message)]},
                 config=config,
                 version="v2"
@@ -144,7 +145,7 @@ async def chat_stream(request: ChatRequest):
                     })
                     yield f"data: {payload}\n\n"
                     
-            done_payload = json.dumps({"type": "done", "thread_id": request.thread_id})
+            done_payload = json.dumps({"type": "done", "thread_id": thread_id})
             yield f"data: {done_payload}\n\n"
                 
         except Exception:  # noqa: BLE001
