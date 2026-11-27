@@ -50,6 +50,11 @@ class WeatherContext(TypedDict, total=False):
     is_outdoor_friendly: bool | None        # Helper flag for biking/walking suitability
     
 
+# Per-run context (not saved in state): identifies whose long-term facts to use
+class AgentContext(TypedDict, total=False):
+    user_id: str
+
+
 # Agent State Schema
 class AgentState(TypedDict, total=False):
     """Custom State schema for Greenway AI Agent.

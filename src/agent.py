@@ -5,7 +5,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import ToolRetryMiddleware
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from src.state import AgentState
+from src.state import AgentContext, AgentState
 from src.tools.location_tools import geocode
 from src.tools.search import web_search
 from src.tools.state_tools import (
@@ -81,6 +81,7 @@ root_agent = create_agent(
         get_user_facts
     ],
     state_schema=AgentState,
+    context_schema=AgentContext,
     system_prompt=load_prompt("root"),
     middleware=[ToolRetryMiddleware(
         max_retries=1,

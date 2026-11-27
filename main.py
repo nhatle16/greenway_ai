@@ -40,6 +40,8 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, examples=["What's the weather in Saskatoon?"])
     thread_id: str | None = Field(default=None, description="Optional thread/session ID for multi-turn conversation history")
+    # shortcut: the client picks its own id with no login, so it only separates users, it doesn't authenticate them; derive it from auth once there is any
+    user_id: str = Field(default="default_user", min_length=1, max_length=64, description="Whose long-term facts to read and save")
 
 class ChatResponse(BaseModel):
     response: str = Field(..., min_length=1, examples=["The weather in Saskatoon is ..."])
@@ -68,7 +70,8 @@ async def chat_sync(request: ChatRequest) -> ChatResponse:
         # Run the agent asynchronously
         result = await agent.ainvoke(
             {"messages": [("user", request.message)]},
-            config=config
+            config=config,
+            context={"user_id": request.user_id},
         )
     except Exception:
         logger.exception("Agent sync call failed")
@@ -96,6 +99,7 @@ async def chat_stream(request: ChatRequest):
             async for event in agent.astream_events(
                 {"messages": [("user", request.message)]},
                 config=config,
+                context={"user_id": request.user_id},
                 version="v2"
             ):
                 kind = event.get("event")

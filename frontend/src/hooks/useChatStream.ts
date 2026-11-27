@@ -3,6 +3,17 @@ import type { Message, ChatSession, ToolExecution, StreamEvent } from '../types/
 
 const SESSIONS_STORAGE_KEY = 'greenway_chat_sessions';
 const ACTIVE_THREAD_KEY = 'greenway_active_thread_id';
+const USER_ID_KEY = 'greenway_user_id';
+
+/** Stable per-browser id so the backend keeps each user's long-term facts separate. */
+function getUserId(): string {
+  let id = localStorage.getItem(USER_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(USER_ID_KEY, id);
+  }
+  return id;
+}
 
 /**
  * Custom React hook for managing SSE chat streaming, thread sessions, and backend connection health.
@@ -134,7 +145,8 @@ export function useChatStream() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: promptText,
-          thread_id: currentThreadId
+          thread_id: currentThreadId,
+          user_id: getUserId()
         }),
         signal: abortControllerRef.current.signal
       });
