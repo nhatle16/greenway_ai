@@ -220,6 +220,9 @@ def _get_flights_impl(
         # List of flight options
         flights = []
 
+        # Duffel returns offers unordered, so sort cheapest first before trimming
+        offers = sorted(offers, key=lambda o: float(o.get("total_amount") or "inf"))
+
         for offer in offers[:max_results]:
             owner_airline = offer.get("owner", {}).get("name", "Unknown")
             total_amount = offer.get("total_amount", "0")
