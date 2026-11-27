@@ -50,12 +50,12 @@ def _fetch_open_meteo_impl(
     include_hourly: bool = False,
     forecast_hours: int = 6
 ) -> dict[str, Any]:
-    """_summary_
+    """Fetch current, daily or hourly weather from Open-Meteo for a coordinate.
 
     Args:
-        lat (float): _description_
-        lng (float): _description_
-        units (str, optional): _description_. Defaults to 'metric'.
+        lat (float): Latitude of the location.
+        lng (float): Longitude of the location.
+        units (str, optional): 'metric' or 'imperial'. Defaults to 'metric'.
     """
     url = "https://api.open-meteo.com/v1/forecast"
     
@@ -225,7 +225,7 @@ def get_weather_forecast(location: str, days: int = 3, units: str = 'metric'):
 
 @tool
 def get_weather_hourly(location: str, hours: int = 6, units: str = 'metric') -> dict[str, Any]:
-    """_summary_
+    """Get the hour-by-hour weather forecast for a city or region over the next few hours.
 
     Args:
         location (str): The name of the location or city (e.g., 'Saskatoon', 'Vancouver, BC')

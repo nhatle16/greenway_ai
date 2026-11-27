@@ -367,7 +367,7 @@ def get_flight_options(
         max_results (int, optional): Number of return results. Defaults to 5.
 
     Returns:
-        Dict[str, Any]: _description_
+        Dict[str, Any]: Flight itineraries with airline, price, stops and segments, or error details.
     """
 
     origin_res = _resolve_to_iata(origin)
