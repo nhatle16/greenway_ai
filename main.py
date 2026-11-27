@@ -135,6 +135,7 @@ async def chat_stream(request: ChatRequest):
                     payload = json.dumps({
                         "type": "tool_start",
                         "tool": event.get("name"),
+                        "run_id": event.get("run_id"),  # pairs this start with its tool_end
                         "input": str(tool_input) if tool_input is not None else None
                     })
                     yield f"data: {payload}\n\n"
@@ -145,6 +146,7 @@ async def chat_stream(request: ChatRequest):
                     payload = json.dumps({
                         "type": "tool_end",
                         "tool": event.get("name"),
+                        "run_id": event.get("run_id"),
                         "output": output_str
                     })
                     yield f"data: {payload}\n\n"

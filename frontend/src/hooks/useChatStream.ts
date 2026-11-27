@@ -191,7 +191,7 @@ export function useChatStream() {
                     updatedContent += event.content;
                   } else if (event.type === 'tool_start') {
                     const toolExec: ToolExecution = {
-                      id: 'tool-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                      id: event.run_id,
                       name: event.tool,
                       input: event.input,
                       status: 'running',
@@ -199,7 +199,8 @@ export function useChatStream() {
                     };
                     updatedTools.push(toolExec);
                   } else if (event.type === 'tool_end') {
-                    const idx = updatedTools.findIndex(t => t.name === event.tool && t.status === 'running');
+                    // Match by run id: parallel calls of the same tool share a name
+                    const idx = updatedTools.findIndex(t => t.id === event.run_id);
                     if (idx !== -1) {
                       updatedTools[idx] = {
                         ...updatedTools[idx],

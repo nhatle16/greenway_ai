@@ -43,8 +43,8 @@ export interface ChatSession {
 export type StreamEvent =
   | { type: 'meta'; thread_id: string | null }
   | { type: 'stream'; content: string }
-  | { type: 'tool_start'; tool: string; input?: string }
-  | { type: 'tool_end'; tool: string; output?: string }
+  | { type: 'tool_start'; tool: string; run_id: string; input?: string }
+  | { type: 'tool_end'; tool: string; run_id: string; output?: string }
   | { type: 'done'; thread_id: string | null }
   | { type: 'error'; detail: string };
 
